@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Cloud to AWS Migration Cost Estimator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-wrapper">
+        <header class="app-header">
+            <div class="logo-container">
+                <div class="brand-icon">
+                    <i class="fab fa-aws"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>Cloud<span class="gradient-text">2AWS</span> Migration Estimator</h1>
+                    <p>Upload your <strong>Azure, Google Cloud, DigitalOcean, or AWS</strong> bill to calculate live AWS pricing & potential savings</p>
+                </div>
+            </div>
+            <div class="header-badges">
+                <span class="badge badge-azure"><i class="fab fa-microsoft"></i> Azure</span>
+                <span class="badge badge-gcp"><i class="fab fa-google"></i> Google Cloud</span>
+                <span class="badge badge-do"><i class="fab fa-digital-ocean"></i> DigitalOcean</span>
+                <span class="badge badge-aws"><i class="fab fa-aws"></i> AWS</span>
+            </div>
+        </header>
+
+        <main class="main-card">
+            <!-- Provider Selection & Upload Section -->
+            <section class="upload-section">
+                <div class="provider-selector-container">
+                    <label class="section-label"><i class="fas fa-satellite-dish"></i> Select Source Cloud Provider</label>
+                    <div class="provider-pills" id="providerPills">
+                        <button type="button" class="provider-pill active" data-provider="auto">
+                            <i class="fas fa-wand-magic-sparkles"></i> Auto-Detect
+                        </button>
+                        <button type="button" class="provider-pill" data-provider="azure">
+                            <i class="fab fa-microsoft"></i> Microsoft Azure
+                        </button>
+                        <button type="button" class="provider-pill" data-provider="gcp">
+                            <i class="fab fa-google"></i> Google Cloud (GCP)
+                        </button>
+                        <button type="button" class="provider-pill" data-provider="digitalocean">
+                            <i class="fab fa-digital-ocean"></i> DigitalOcean
+                        </button>
+                        <button type="button" class="provider-pill" data-provider="aws">
+                            <i class="fab fa-aws"></i> AWS
+                        </button>
+                    </div>
+                </div>
+
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon-wrapper">
+                        <i class="fas fa-file-invoice-dollar upload-icon"></i>
+                    </div>
+                    <h3>Upload Cloud Billing Document</h3>
+                    <p class="upload-subtitle">Drag & drop your monthly cloud invoice or export (PDF, CSV, JSON)</p>
+                    <div class="file-badges">
+                        <span><i class="fas fa-file-pdf text-danger"></i> PDF Bills</span>
+                        <span><i class="fas fa-file-csv text-success"></i> CSV Reports</span>
+                        <span><i class="fas fa-file-code text-warning"></i> JSON Exports</span>
+                    </div>
+                    <input type="file" id="fileInput" accept=".pdf,.json,.csv" hidden>
+                    <button class="btn btn-upload" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-cloud-arrow-up"></i> Select Invoice File
+                    </button>
+                </div>
+
+                <div id="fileInfo" class="file-info-card hidden">
+                    <div class="file-info-icon">
+                        <i class="fas fa-file-invoice" id="fileIcon"></i>
+                    </div>
+                    <div class="file-info-details">
+                        <h4 id="fileName">invoice.pdf</h4>
+                        <div class="file-status-row">
+                            <span id="fileStatus" class="status-text">Processing document with AI...</span>
+                            <span id="detectedProviderBadge" class="detected-badge hidden">Auto-Detected</span>
+                        </div>
+                    </div>
+                    <button class="btn-icon remove-btn" onclick="clearFile()" title="Remove file">
+                        <i class="fas fa-trash-can"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Actions Bar -->
+            <div class="actions-bar">
+                <button class="btn btn-primary" id="calculateBtn" disabled>
+                    <i class="fas fa-bolt"></i> Calculate AWS Migration Pricing
+                </button>
+                <button class="btn btn-secondary" id="resetBtn">
+                    <i class="fas fa-rotate-right"></i> Reset
+                </button>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading-container hidden">
+                <div class="spinner-pulse"></div>
+                <h3 id="loadingText">Analyzing workloads with Gemini AI...</h3>
+                <p id="loadingSubtext">Querying AWS Price List API for real-time SKU rates...</p>
+            </div>
+
+            <!-- Results Section -->
+            <section id="results" class="results-container hidden">
+                <!-- Migration Highlights Banner -->
+                <div class="migration-banner" id="migrationBanner">
+                    <div class="banner-icon-container" id="bannerIcon">
+                        <i class="fas fa-piggy-bank"></i>
+                    </div>
+                    <div class="banner-content">
+                        <span class="banner-tag" id="bannerTag">MIGRATION IMPACT ANALYSIS</span>
+                        <h2 class="banner-title" id="bannerTitle">Calculated AWS Savings</h2>
+                        <p class="banner-desc" id="bannerDesc">Estimated monthly cost comparison for your multi-cloud workloads on AWS.</p>
+                    </div>
+                    <div class="banner-stat">
+                        <span class="stat-label">Estimated Monthly Savings</span>
+                        <span class="stat-value" id="bannerSavingsValue">$0.00</span>
+                        <span class="stat-badge" id="bannerSavingsBadge">0%</span>
+                <!-- Currency & Exchange Rate Bar -->
+                <div id="currencyBar" class="currency-bar hidden">
+                    <div class="currency-info-box">
+                        <div class="currency-pulse-dot"></div>
+                        <span class="currency-title-label"><i class="fas fa-coins text-warning"></i> Source Bill Currency:</span>
+                        <span class="currency-badge" id="detectedCurrencyBadge">INR (₹)</span>
+                        <span class="exchange-rate-pill" id="exchangeRatePill">Exchange Rate: 1 USD = ₹84.00 INR</span>
+                    </div>
+                    <div class="currency-toggle-group">
+                        <span class="toggle-label"><i class="fas fa-eye"></i> View Currency:</span>
+                        <div class="currency-toggle-btns" id="currencyToggleBtns">
+                            <button type="button" class="curr-btn active" data-view="usd">USD ($)</button>
+                            <button type="button" class="curr-btn" data-view="source" id="sourceCurrBtn">Source Currency</button>
+                            <button type="button" class="curr-btn" data-view="dual">Dual View</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Cards Grid -->
+                <div class="summary-cards-grid">
+                    <div class="metric-card source-metric">
+                        <div class="metric-header">
+                            <span class="metric-title" id="sourceProviderLabel">Current Cloud Bill</span>
+                            <i class="fas fa-file-invoice-dollar metric-icon"></i>
+                        </div>
+                        <div class="metric-value" id="sourceCostValue">$0.00</div>
+                        <div class="metric-subtitle" id="sourceProviderSub">Actual billed amount</div>
+                    </div>
+
+                    <div class="metric-card target-metric">
+                        <div class="metric-header">
+                            <span class="metric-title">AWS Equivalent Cost</span>
+                            <i class="fab fa-aws metric-icon aws-color"></i>
+                        </div>
+                        <div class="metric-value" id="awsCostValue">$0.00</div>
+                        <div class="metric-subtitle">Live AWS Price List API rate</div>
+                    </div>
+
+                    <div class="metric-card delta-metric">
+                        <div class="metric-header">
+                            <span class="metric-title">Monthly Cost Delta</span>
+                            <i class="fas fa-arrow-trend-down metric-icon delta-color"></i>
+                        </div>
+                        <div class="metric-value" id="deltaCostValue">$0.00</div>
+                        <div class="metric-subtitle" id="deltaCostSub">Cost difference moving to AWS</div>
+                    </div>
+
+                    <div class="metric-card count-metric">
+                        <div class="metric-header">
+                            <span class="metric-title">Workloads Analyzed</span>
+                            <i class="fas fa-cubes metric-icon"></i>
+                        </div>
+                        <div class="metric-value" id="workloadCount">0</div>
+                        <div class="metric-subtitle" id="billingPeriodValue">31-Day Monthly Period</div>
+                    </div>
+                </div>
+
+                <!-- Side-by-Side Breakdown -->
+                <div class="breakdown-section">
+                    <div class="breakdown-header">
+                        <div>
+                            <h3><i class="fas fa-arrow-right-arrow-left"></i> Workload-by-Workload Migration Comparison</h3>
+                            <p>Side-by-side mapping of your source cloud resources to matching AWS services & live pricing</p>
+                        </div>
+                        <div class="breakdown-stats">
+                            <span class="pill pill-success" id="matchedCountPill">0 Mapped</span>
+                        </div>
+                    </div>
+
+                    <div id="resourcesList" class="resources-container"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <p><i class="fab fa-aws"></i> Powered by <strong>AWS Price List API</strong> & <strong>Google Gemini AI</strong> • Real-time Multi-Cloud Cost Analysis</p>
+        </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

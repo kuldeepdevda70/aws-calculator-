@@ -1,0 +1,6 @@
+Service Name,Resource Type,Meter Name,Consumed Quantity,Unit of Measure,Cost in USD,Resource Location
+Virtual Machines,Compute,Standard_D2s_v3,744,Hours,70.08,East US
+Azure Database for MySQL,Database,General Purpose - Compute Gen 5 2 vCore,744,Hours,98.20,East US
+Storage Accounts,Storage,Standard SSD Managed Disks - E10,128,GB-Mo,19.20,East US
+Bandwidth,Networking,Data Transfer Out - Internet,500,GB,43.50,East US
+Virtual Network,Networking,VPN Gateway VpnGw1,744,Hours,141.36,East US

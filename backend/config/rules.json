@@ -1,0 +1,208 @@
+{
+  "default_region": "ap-south-1",
+  "file_retention_hours": 24,
+  "supported_extensions": [".pdf", ".png", ".jpg", ".jpeg", ".csv", ".xlsx", ".xls"],
+  "supported_aws_regions": [
+    { "code": "ap-south-1", "name": "Asia Pacific (Mumbai) [Default]" },
+    { "code": "us-east-1", "name": "US East (N. Virginia)" },
+    { "code": "us-west-2", "name": "US West (Oregon)" },
+    { "code": "eu-west-1", "name": "Europe (Ireland)" },
+    { "code": "ap-southeast-1", "name": "Asia Pacific (Singapore)" }
+  ],
+  "available_aws_services": [
+    {
+      "code": "AmazonEC2",
+      "name": "Amazon EC2",
+      "category": "Compute",
+      "common_instances": ["t3.nano", "t3.micro", "t3.small", "t3.medium", "t3.large", "t3.xlarge", "m5.large", "m5.xlarge", "c5.large", "r5.large"]
+    },
+    {
+      "code": "AmazonEBS",
+      "name": "Amazon EBS",
+      "category": "Storage",
+      "common_instances": ["gp3", "gp2", "io2", "st1", "sc1"]
+    },
+    {
+      "code": "AmazonS3",
+      "name": "Amazon S3",
+      "category": "Storage",
+      "common_instances": ["Standard", "Intelligent-Tiering", "Standard-IA", "Glacier Flexible"]
+    },
+    {
+      "code": "AmazonRDS",
+      "name": "Amazon RDS",
+      "category": "Database",
+      "common_instances": ["db.t3.micro", "db.t3.small", "db.t3.medium", "db.m5.large", "db.r5.large"]
+    },
+    {
+      "code": "AWSELB",
+      "name": "AWS Elastic Load Balancing",
+      "category": "Networking",
+      "common_instances": ["Application Load Balancer", "Network Load Balancer"]
+    },
+    {
+      "code": "AmazonElastiCache",
+      "name": "Amazon ElastiCache",
+      "category": "Database",
+      "common_instances": ["cache.t3.micro", "cache.t3.small", "cache.t3.medium", "cache.m5.large"]
+    },
+    {
+      "code": "AmazonRoute53",
+      "name": "Amazon Route 53",
+      "category": "Networking",
+      "common_instances": ["Hosted Zone", "DNS Queries"]
+    },
+    {
+      "code": "AWSDataTransfer",
+      "name": "AWS Data Transfer",
+      "category": "Networking",
+      "common_instances": ["Internet Out", "Regional Inter-AZ", "VPC Peering"]
+    },
+    {
+      "code": "AWSVPC",
+      "name": "Amazon VPC",
+      "category": "Networking",
+      "common_instances": ["Public IPv4 Address", "NAT Gateway", "VPN Connection"]
+    },
+    {
+      "code": "AWSKMS",
+      "name": "AWS KMS",
+      "category": "Security",
+      "common_instances": ["Key Management", "Secrets Manager"]
+    }
+  ],
+  "providers": {
+    "azure": {
+      "name": "Microsoft Azure",
+      "keywords": ["azure", "microsoft", "subscription id", "resource group", "meter name"]
+    },
+    "gcp": {
+      "name": "Google Cloud Platform",
+      "keywords": ["google cloud", "gcp", "project id", "compute engine", "cloud storage"]
+    },
+    "aws": {
+      "name": "Amazon Web Services",
+      "keywords": ["amazon web services", "aws", "account id", "arn:aws", "elastic compute"]
+    },
+    "digitalocean": {
+      "name": "DigitalOcean",
+      "keywords": ["digitalocean", "droplet", "spaces", "bandwidth pool"]
+    }
+  },
+  "service_category_rules": [
+    {
+      "category": "Load Balancer",
+      "keywords": ["application gateway", "load balancer", "gateway standard v2", "app gateway"],
+      "target_aws_service": "AWS Elastic Load Balancing",
+      "target_aws_service_code": "AWSELB",
+      "default_instance": "Application Load Balancer"
+    },
+    {
+      "category": "Cache",
+      "keywords": ["redis", "redis cache", "memcached", "cache instance", "cache"],
+      "target_aws_service": "Amazon ElastiCache",
+      "target_aws_service_code": "AmazonElastiCache",
+      "default_instance": "cache.t3.micro"
+    },
+    {
+      "category": "Database",
+      "keywords": ["mysql", "postgres", "sql server", "database for", "flexible server", "cloud sql", "rds", "cosmos"],
+      "target_aws_service": "Amazon RDS",
+      "target_aws_service_code": "AmazonRDS",
+      "default_instance": "db.t3.medium"
+    },
+    {
+      "category": "Block Storage",
+      "keywords": ["managed disk", "disk", "persistent disk", "ebs", "volume", "snapshot"],
+      "target_aws_service": "Amazon EBS",
+      "target_aws_service_code": "AmazonEBS",
+      "default_instance": "gp3"
+    },
+    {
+      "category": "Object Storage",
+      "keywords": ["blob", "storage account", "cloud storage", "bucket", "spaces", "s3", "files", "tables read"],
+      "target_aws_service": "Amazon S3",
+      "target_aws_service_code": "AmazonS3",
+      "default_instance": "Standard"
+    },
+    {
+      "category": "DNS",
+      "keywords": ["dns", "dns public", "dns private", "zone", "public query", "private query"],
+      "target_aws_service": "Amazon Route 53",
+      "target_aws_service_code": "AmazonRoute53",
+      "default_instance": "Hosted Zone"
+    },
+    {
+      "category": "Public IP & Networking",
+      "keywords": ["ip address", "public ip", "ipv4", "addresses", "static public", "private link"],
+      "target_aws_service": "Amazon VPC",
+      "target_aws_service_code": "AWSVPC",
+      "default_instance": "Public IPv4 Address"
+    },
+    {
+      "category": "Network & Bandwidth",
+      "keywords": ["bandwidth", "data transfer", "egress", "traffic", "transfer out", "out au", "transfer"],
+      "target_aws_service": "AWS Data Transfer",
+      "target_aws_service_code": "AWSDataTransfer",
+      "default_instance": "Internet Out"
+    },
+    {
+      "category": "Security & Keys",
+      "keywords": ["key vault", "kms", "secret", "vault"],
+      "target_aws_service": "AWS KMS",
+      "target_aws_service_code": "AWSKMS",
+      "default_instance": "Key Management"
+    },
+    {
+      "category": "Compute",
+      "keywords": ["virtual machine", "compute engine", "droplet", "ec2", "vcore", "app service", "container"],
+      "target_aws_service": "Amazon EC2",
+      "target_aws_service_code": "AmazonEC2",
+      "default_instance": "t3.medium"
+    }
+  ],
+  "instance_mappings": {
+    "d2_v3": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4, "storage_gb": 0 },
+    "d2s_v3": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4, "storage_gb": 0 },
+    "standard_d2s_v3": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4, "storage_gb": 0 },
+    "d4_v3": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 8, "storage_gb": 0 },
+    "d4s_v3": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 8, "storage_gb": 0 },
+    "standard_d4s_v3": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 8, "storage_gb": 0 },
+    "b1s": { "aws_instance": "t3.nano", "vcpu": 1, "ram_gb": 0.5, "storage_gb": 0 },
+    "standard_b1s": { "aws_instance": "t3.nano", "vcpu": 1, "ram_gb": 0.5, "storage_gb": 0 },
+    "b1ms": { "aws_instance": "t3.micro", "vcpu": 2, "ram_gb": 1, "storage_gb": 0 },
+    "standard_b1ms": { "aws_instance": "t3.micro", "vcpu": 2, "ram_gb": 1, "storage_gb": 0 },
+    "b2s": { "aws_instance": "t3.small", "vcpu": 2, "ram_gb": 2, "storage_gb": 0 },
+    "standard_b2s": { "aws_instance": "t3.small", "vcpu": 2, "ram_gb": 2, "storage_gb": 0 },
+    "b2ms": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4, "storage_gb": 0 },
+    "standard_b2ms": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4, "storage_gb": 0 },
+    "b4ms": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 16, "storage_gb": 0 },
+    "e4": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 128 },
+    "p4": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 32 },
+    "p6": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 64 },
+    "p10": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 128 },
+    "p15": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 256 },
+    "p20": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 512 },
+    "p30": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 1024 },
+    "c0": { "aws_instance": "cache.t3.micro", "vcpu": 1, "ram_gb": 0.5, "storage_gb": 0 },
+    "n1_standard_1": { "aws_instance": "t3.medium", "vcpu": 1, "ram_gb": 3.75, "storage_gb": 0 },
+    "n1_standard_2": { "aws_instance": "m5.large", "vcpu": 2, "ram_gb": 7.5, "storage_gb": 0 },
+    "s_1vcpu_1gb": { "aws_instance": "t3.micro", "vcpu": 1, "ram_gb": 1, "storage_gb": 25 },
+    "s_1vcpu_2gb": { "aws_instance": "t3.small", "vcpu": 1, "ram_gb": 2, "storage_gb": 50 },
+    "s_2vcpu_4gb": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4, "storage_gb": 80 }
+  },
+  "currencies": {
+    "INR": { "symbol": "₹", "keywords": ["₹", "inr", "rs.", "rs", "rupee", "gstin"] },
+    "USD": { "symbol": "$", "keywords": ["$", "usd", "us dollar"] },
+    "EUR": { "symbol": "€", "keywords": ["€", "eur", "euro"] },
+    "GBP": { "symbol": "£", "keywords": ["£", "gbp", "pound"] }
+  },
+  "tabular_column_mappings": {
+    "service": ["service", "servicename", "service name", "product", "productname", "product name", "item description", "description"],
+    "sku": ["sku", "instance type", "instancetype", "meter name", "meter", "resource type"],
+    "usage": ["usage", "usage quantity", "usagequantity", "quantity", "consumed quantity", "amount", "hours"],
+    "unit": ["unit", "unit of measure", "usage unit", "unit of metric"],
+    "cost": ["cost", "cost in usd", "pretax cost", "extended cost", "total", "amount", "total amount", "net amount"],
+    "region": ["region", "location", "resource location", "datacenter"]
+  }
+}

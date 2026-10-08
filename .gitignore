@@ -1,0 +1,110 @@
+# ==========================================
+# 1. Environment Variables & Secret Credentials
+# (CRITICAL: Never commit API keys or AWS credentials)
+# ==========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env
+*.pem
+*.key
+
+# Preserve example environment template files
+!.env.example
+!backend/.env.example
+
+# ==========================================
+# 2. Python Virtual Environments & Cache
+# (Do not push heavy virtual environment or compiled bytecode)
+# ==========================================
+venv/
+.venv/
+env/
+ENV/
+backend/venv/
+backend/.venv/
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*/*/*/__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Python testing & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ==========================================
+# 3. Node.js & Frontend Build Outputs
+# (Do not push massive dependency folders or production bundles)
+# ==========================================
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+build/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==========================================
+# 4. User Uploads & Confidential Invoices
+# (Do not push customer billing PDFs, invoices, or exported reports)
+# ==========================================
+backend/uploads/*
+!backend/uploads/.gitkeep
+uploads/*
+!uploads/.gitkeep
+*.pdf
+*.xlsx
+*.csv
+# Keep sample bill for testing
+!backend/sample_bills/*.csv
+
+# ==========================================
+# 5. Scratch & Temporary Files
+# ==========================================
+scratch/
+temp/
+tmp/
+*.log
+*.tmp
+*.bak
+
+# ==========================================
+# 6. Playwright & Browser Automation Artifacts
+# ==========================================
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# ==========================================
+# 7. Operating System & IDE Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
