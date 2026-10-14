@@ -1,11 +1,18 @@
 import asyncio
+import sys
 import logging
 from contextlib import asynccontextmanager
+
+# On Windows, ensure ProactorEventLoop is used for subprocesses (needed by Playwright)
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.endpoints.upload import router as upload_router
 from app.api.v1.endpoints.mapping import router as mapping_router
 from app.api.v1.endpoints.pricing import router as pricing_router
+from app.api.v1.endpoints.calculator import router as calculator_router
 from app.core.config import settings
 from app.utils.cleanup import run_cleanup_worker
 
@@ -51,6 +58,8 @@ app.add_middleware(
 app.include_router(upload_router, prefix="/api/v1", tags=["Billing Ingestion & Upload"])
 app.include_router(mapping_router, prefix="/api/v1/mapping", tags=["AWS Architecture Mapping & Edit"])
 app.include_router(pricing_router, prefix="/api/v1/pricing", tags=["AWS Price List Cost Calculation & Export"])
+app.include_router(calculator_router, prefix="/api/v1/calculator", tags=["AWS Pricing Calculator Link (Playwright)"])
+
 
 
 @app.get("/")

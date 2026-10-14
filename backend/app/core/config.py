@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: Optional[str] = None
     AWS_SESSION_TOKEN: Optional[str] = None
 
+    # Playwright & AWS Calculator Automation
+    CALCULATOR_URL: str = "https://calculator.aws/#/addService"
+    PLAYWRIGHT_HEADLESS: bool = True
+    PLAYWRIGHT_TIMEOUT_SECONDS: int = 90
+
     # Uploads and 24-hour Lifecycle Management
     UPLOAD_DIR: str = str(BASE_DIR / "uploads")
     FILE_RETENTION_HOURS: int = 24

@@ -7,6 +7,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from app.core.config import settings
 from app.services.bill_parser import bill_parser
 from app.services.aws_mapper import aws_mapper
+from app.services.validation_service import validation_service
 
 router = APIRouter()
 logger = logging.getLogger("upload_endpoint")
@@ -68,6 +69,7 @@ async def upload_bill(file: UploadFile = File(...)):
     # Automatically generate recommended AWS architectural mappings
     raw_items = parsed_result.get("items", [])
     mapped_resources = aws_mapper.map_all(raw_items, target_region=settings.AWS_REGION)
+    completeness = validation_service.validate_completeness(mapped_resources)
 
     expires_at = datetime.utcnow() + timedelta(hours=settings.FILE_RETENTION_HOURS)
 
@@ -80,7 +82,8 @@ async def upload_bill(file: UploadFile = File(...)):
         "retention_expires_at": expires_at.isoformat(),
         "default_target_aws_region": settings.AWS_REGION,
         **parsed_result,
-        "mapped_resources": mapped_resources
+        "mapped_resources": mapped_resources,
+        "completeness_accounting": completeness
     }
 
 

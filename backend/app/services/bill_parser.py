@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Tuple
 from app.core.config import settings
 from app.services.textract_service import textract_service
 from app.services.tabular_service import tabular_service
+from app.services.normalizer import resource_normalizer
 
 logger = logging.getLogger("bill_parser")
 
@@ -32,8 +33,8 @@ class BillParser:
         raw_text = extracted.get("raw_text", "")
         tables = extracted.get("tables", [])
 
-        provider = self._detect_provider(raw_text)
-        currency, symbol = self._detect_currency(raw_text)
+        provider = resource_normalizer.detect_provider(raw_text)
+        currency, symbol = resource_normalizer.detect_currency(raw_text)
 
         items: List[Dict[str, Any]] = []
 
@@ -47,82 +48,98 @@ class BillParser:
                             desc = row[0] if len(row) > 0 else "Cloud Resource"
                             qty = self._find_first_numeric(row[1:]) if len(row) > 1 else 1.0
                             cost = self._find_first_numeric(list(reversed(row[1:]))) if len(row) > 1 else 0.0
+                            sku = self._extract_sku(desc)
+                            specs = resource_normalizer.extract_specs(desc, sku=sku)
 
                             items.append({
                                 "id": f"item-{len(items) + 1}",
                                 "source_provider": provider,
                                 "source_service_name": desc,
-                                "sku": self._extract_sku(desc),
+                                "sku": sku,
+                                "specs": specs,
                                 "usage_amount": qty,
                                 "usage_unit": "Units",
                                 "cost": cost,
-                                "source_region": settings.AWS_REGION,
-                                "raw_description": " | ".join(row)
+                                "source_region": resource_normalizer.normalize_region(None),
+                                "raw_description": " | ".join(row),
+                                "raw_record": {f"col_{c_idx}": val for c_idx, val in enumerate(row)}
                             })
 
         # If no tables found, construct line items from lines that look like bill line items
         if not items and extracted.get("lines"):
+            raw_full = extracted.get("raw_text", "")
+            lines_to_process = extracted["lines"]
+
+            if "Usage Charges" in raw_full:
+                usage_idx = -1
+                for idx, l in enumerate(lines_to_process):
+                    if "Usage Charges" in l:
+                        usage_idx = idx
+                        break
+                if usage_idx != -1:
+                    lines_to_process = lines_to_process[usage_idx:]
+
             ignore_prefixes = (
-                "order id", "subscription id", "billing period", "due date",
-                "state of destination", "total charges", "grand total", "sub-total",
-                "total (", "total inr", "total amount", "total:", "total ",
-                "service period", "statement date", "commercial invoice", "payment ref",
-                "pan no", "cin ", "phone number", "web support", "gstin", "rupees",
-                "regd. office", "tax invoice", "invoice number", "bill to", "ship to",
-                "amount in words", "payment instructions"
+                "commercial invoice", "payment ref", "statement date", "usage charges",
+                "name type", "detailed usage", "additional info", "discover", "useful resources",
+                "support", "connect with", "visit windows", "total (inr)", "grand total",
+                "sub-total", "order id", "subscription id", "billing period", "due date",
+                "state of destination", "total charges", "total inr", "pan no", "cin ",
+                "phone number", "web support", "gstin", "rupees", "regd. office",
+                "total:", "total ", "amount in words", "payment instructions"
             )
-            prev_descriptive_line = ""
-            for line in extracted["lines"]:
+            pending_title = ""
+            for line in lines_to_process:
                 line_clean = line.strip()
                 line_lower = line_clean.lower()
                 if any(line_lower.startswith(p) for p in ignore_prefixes) or "regd. office" in line_lower:
-                    prev_descriptive_line = ""
-                    continue
-                if re.match(r"^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}", line_clean):
-                    prev_descriptive_line = ""
                     continue
 
-                num_matches = list(re.finditer(r"[\d,]+(?:\.\d{2,4})", line_clean))
-                if num_matches:
+                num_matches = list(re.finditer(r"[\d,]+\.\d{2,4}", line_clean))
+                if len(num_matches) >= 2:
+                    first_num = num_matches[0]
+                    sub_name = line_clean[:first_num.start()].strip()
+                    full_name = f"{pending_title} {sub_name}".strip() if pending_title else sub_name
                     try:
                         cost_val = float(num_matches[-1].group(0).replace(",", ""))
                     except ValueError:
-                        continue
-
-                    service_name = line_clean[:num_matches[0].start()].strip()
-                    if not service_name:
-                        service_name = line_clean[:50].strip()
-
-                    # Stitch previous context if current name was orphaned (e.g. 'Addresses')
-                    if len(service_name.split()) <= 2 and prev_descriptive_line:
-                        service_name = f"{prev_descriptive_line} - {service_name}".strip()
+                        cost_val = 0.0
 
                     usage_val = 1.0
-                    if len(num_matches) > 1:
+                    if len(num_matches) >= 3:
                         try:
-                            usage_val = float(num_matches[0].group(0).replace(",", ""))
+                            usage_val = float(num_matches[-3].group(0).replace(",", ""))
+                        except ValueError:
+                            usage_val = 1.0
+                    elif num_matches:
+                        try:
+                            usage_val = float(first_num.group(0).replace(",", ""))
                         except ValueError:
                             usage_val = 1.0
 
-                    if len(service_name) > 2 and not any(service_name.lower().startswith(p) for p in ignore_prefixes):
+                    if len(full_name) > 2 and not any(full_name.lower().startswith(p) for p in ignore_prefixes):
+                        sku = self._extract_sku(full_name) or self._extract_sku(line_clean)
+                        specs = resource_normalizer.extract_specs(full_name, sku=sku)
+
                         items.append({
                             "id": f"item-{len(items) + 1}",
                             "source_provider": provider,
-                            "source_service_name": service_name,
-                            "sku": self._extract_sku(service_name) or self._extract_sku(line_clean),
+                            "source_service_name": full_name,
+                            "sku": sku,
+                            "specs": specs,
                             "usage_amount": usage_val,
                             "usage_unit": "Units",
                             "cost": cost_val,
-                            "source_region": settings.AWS_REGION,
-                            "raw_description": line_clean
+                            "source_region": resource_normalizer.normalize_region(None),
+                            "raw_description": line_clean,
+                            "raw_record": {"raw_line": line_clean}
                         })
-                    prev_descriptive_line = ""
+                    pending_title = ""
                 else:
-                    # Line has no numbers - could be a header/title for the next line
-                    if len(line_clean) > 5 and not any(line_lower.startswith(p) for p in ignore_prefixes):
-                        prev_descriptive_line = line_clean
+                    if len(line_clean) > 3 and not any(line_lower.startswith(p) for p in ignore_prefixes):
+                        pending_title = f"{pending_title} {line_clean}".strip()
                     else:
-                        prev_descriptive_line = ""
+                        pending_title = ""
 
         return {
             "file_type": extracted.get("extraction_source", "pdf_document"),
@@ -135,25 +152,36 @@ class BillParser:
         }
 
     def _parse_with_tabular(self, file_bytes: bytes, filename: str) -> Dict[str, Any]:
-        """Extracts data via pandas tabular engine."""
+        """Extracts data via pandas tabular engine with normalized specs and metadata."""
         records = tabular_service.parse_tabular_file(file_bytes, filename)
         all_text = " ".join([r.get("source_service_name", "") + " " + str(r.get("raw_data", "")) for r in records])
 
-        provider = self._detect_provider(all_text)
-        currency, symbol = self._detect_currency(all_text)
+        provider = resource_normalizer.detect_provider(all_text)
+        currency, symbol = resource_normalizer.detect_currency(all_text)
 
         items = []
         for idx, rec in enumerate(records):
+            sku = rec.get("sku") or self._extract_sku(rec.get("source_service_name", ""))
+            specs = resource_normalizer.extract_specs(
+                rec.get("source_service_name", ""),
+                sku=sku,
+                unit=rec.get("usage_unit")
+            )
+            raw_rec = rec.get("raw_record") or rec.get("raw_data") or {}
+
             items.append({
-                "id": f"item-{idx + 1}",
+                "id": rec.get("id") or f"item-{idx + 1}",
                 "source_provider": provider,
                 "source_service_name": rec.get("source_service_name"),
-                "sku": rec.get("sku") or self._extract_sku(rec.get("source_service_name", "")),
+                "sku": sku,
+                "specs": specs,
                 "usage_amount": rec.get("usage_amount", 0.0),
                 "usage_unit": rec.get("usage_unit", "Units"),
                 "cost": rec.get("cost", 0.0),
-                "source_region": rec.get("region", settings.AWS_REGION),
-                "raw_description": str(rec.get("raw_data", ""))
+                "source_region": resource_normalizer.normalize_region(rec.get("region")),
+                "raw_description": str(rec.get("raw_data", "")),
+                "raw_record": raw_rec,
+                "row_index": rec.get("row_index", idx + 1)
             })
 
         return {
@@ -165,30 +193,9 @@ class BillParser:
             "items": items
         }
 
-    def _detect_provider(self, text: str) -> str:
-        """Identifies source provider using keywords loaded from rules config."""
-        text_lower = text.lower()
-        providers = self.rules.get("providers", {})
-        for key, p_data in providers.items():
-            for kw in p_data.get("keywords", []):
-                if kw in text_lower:
-                    return p_data.get("name", key.capitalize())
-        return "Unknown Cloud"
-
-    def _detect_currency(self, text: str) -> Tuple[str, str]:
-        """Identifies billing currency using keywords and symbols from rules config."""
-        text_lower = text.lower()
-        currencies = self.rules.get("currencies", {})
-        for code, c_data in currencies.items():
-            for kw in c_data.get("keywords", []):
-                if kw in text_lower:
-                    return code, c_data.get("symbol", "$")
-        return "USD", "$"
-
     @staticmethod
     def _extract_sku(text: str) -> str | None:
         """Extracts common instance sizes (e.g. Standard_D2s_v3, t3.medium, n1-standard-1, D2s v3, B1ms, E4)."""
-        # Look for explicit patterns like D2 v3, D2s v3, B1ms, B2s, E4, P6
         m_az = re.search(r"\b([A-Z]\d+[a-z]*(?:\s*v\d+)?)\b", text)
         if m_az:
             return m_az.group(1).replace(" ", "_")

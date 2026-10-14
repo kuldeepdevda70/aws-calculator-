@@ -166,3 +166,17 @@ h1, h2, h3, h4, h5 {
 ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(255, 153, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255, 153, 0, 0.65);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+

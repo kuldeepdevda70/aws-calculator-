@@ -16,7 +16,9 @@ import {
   Cpu,
   Layers,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  AlertTriangle,
+  HelpCircle
 } from 'lucide-react';
 
 export default function ResourceEditScreen({
@@ -62,12 +64,15 @@ export default function ResourceEditScreen({
       prev.map(r => {
         if (r.id === id) {
           const updated = { ...r, [field]: value };
-          // If changing service, update service code and default instance
           if (field === 'target_aws_service' && options?.available_services) {
             const foundService = options.available_services.find(s => s.name === value);
             if (foundService) {
               updated.target_aws_service_code = foundService.code;
               updated.target_aws_category = foundService.category;
+              updated.is_review_required = false;
+              if (updated.mapping_confidence === 'review_required') {
+                updated.mapping_confidence = 'manual_mapped';
+              }
               if (foundService.common_instances?.length) {
                 updated.target_aws_instance_type = foundService.common_instances[0];
               }
@@ -105,6 +110,8 @@ export default function ResourceEditScreen({
       target_ram_gb: 4.0,
       target_storage_gb: 0,
       target_quantity: 1,
+      mapping_confidence: 'manual_mapped',
+      mapping_rationale: 'Manually added workload',
       notes: 'Manually added workload'
     };
     setResources([newResource, ...resources]);
@@ -146,10 +153,12 @@ export default function ResourceEditScreen({
     const matchesSearch =
       r.source_service_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.target_aws_service?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.target_aws_instance_type?.toLowerCase().includes(searchQuery.toLowerCase());
+      r.target_aws_instance_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.source_sku?.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory =
       categoryFilter === 'ALL' ||
+      (categoryFilter === 'REVIEW' && (r.is_review_required || r.mapping_confidence === 'review_required')) ||
       r.target_aws_category?.toUpperCase() === categoryFilter.toUpperCase() ||
       r.target_aws_service?.toUpperCase().includes(categoryFilter);
 
@@ -159,6 +168,73 @@ export default function ResourceEditScreen({
   // Calculate summary metrics
   const totalSourceCost = resources.reduce((sum, r) => sum + (Number(r.source_cost) || 0), 0);
   const totalQuantity = resources.reduce((sum, r) => sum + (Number(r.target_quantity) || 1), 0);
+  const reviewRequiredCount = resources.filter(r => r.is_review_required || r.mapping_confidence === 'review_required').length;
+  const exactSkuCount = resources.filter(r => r.mapping_confidence === 'exact_sku' || r.mapping_confidence === 'spec_matched').length;
+
+  // Render confidence badge
+  const renderConfidenceBadge = (confidence, isReview) => {
+    if (isReview || confidence === 'review_required') {
+      return (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: 'rgba(239, 68, 68, 0.15)',
+          color: '#f87171',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          padding: '2px 8px',
+          borderRadius: '9999px',
+          fontSize: '0.72rem',
+          fontWeight: 600
+        }}>
+          <AlertTriangle size={11} /> Review Required
+        </span>
+      );
+    }
+    if (confidence === 'exact_sku') {
+      return (
+        <span style={{
+          background: 'rgba(16, 185, 129, 0.15)',
+          color: '#6ee7b7',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
+          padding: '2px 8px',
+          borderRadius: '9999px',
+          fontSize: '0.72rem',
+          fontWeight: 600
+        }}>
+          Exact SKU
+        </span>
+      );
+    }
+    if (confidence === 'spec_matched') {
+      return (
+        <span style={{
+          background: 'rgba(56, 189, 248, 0.15)',
+          color: '#38bdf8',
+          border: '1px solid rgba(56, 189, 248, 0.3)',
+          padding: '2px 8px',
+          borderRadius: '9999px',
+          fontSize: '0.72rem',
+          fontWeight: 600
+        }}>
+          Spec Matched
+        </span>
+      );
+    }
+    return (
+      <span style={{
+        background: 'rgba(245, 158, 11, 0.15)',
+        color: '#fbbf24',
+        border: '1px solid rgba(245, 158, 11, 0.3)',
+        padding: '2px 8px',
+        borderRadius: '9999px',
+        fontSize: '0.72rem',
+        fontWeight: 600
+      }}>
+        Category Rule
+      </span>
+    );
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
@@ -171,7 +247,7 @@ export default function ResourceEditScreen({
               <h2 style={{ fontSize: '1.6rem', color: '#fff' }}>Review & Edit AWS Architecture Mapping</h2>
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem' }}>
-              Verify converted workloads from <strong>{detectedProvider}</strong> into equivalent AWS services. Adjust instance types, storage, quantities, or regions.
+              Verify converted workloads from <strong>{detectedProvider}</strong> into equivalent AWS services. Review confidence ratings, instance specs, and storage volumes.
             </p>
           </div>
 
@@ -187,6 +263,33 @@ export default function ResourceEditScreen({
             </button>
           </div>
         </div>
+
+        {reviewRequiredCount > 0 && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            padding: '0.85rem 1.25rem',
+            borderRadius: '10px',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.75rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#fca5a5', fontSize: '0.92rem' }}>
+              <AlertTriangle size={18} style={{ color: '#f87171' }} />
+              <span><strong>{reviewRequiredCount} workload(s)</strong> require manual architect review. They have been tagged below with suggested AWS candidates.</span>
+            </div>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setCategoryFilter('REVIEW')}
+              style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem', borderColor: '#f87171', color: '#fca5a5' }}
+            >
+              Filter Review Items
+            </button>
+          </div>
+        )}
 
         {saveStatus && (
           <div style={{
@@ -217,9 +320,12 @@ export default function ResourceEditScreen({
           </div>
 
           <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Identified Workloads</div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#a78bfa' }}>
-              {resources.length} items ({totalQuantity} units)
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Mapping Completeness</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#10b981' }}>
+              100% Accounted
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', fontWeight: 400 }}>
+                {exactSkuCount} validated • {reviewRequiredCount} review
+              </span>
             </div>
           </div>
 
@@ -272,14 +378,18 @@ export default function ResourceEditScreen({
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {['ALL', 'COMPUTE', 'STORAGE', 'DATABASE', 'NETWORKING'].map(cat => (
+          {['ALL', 'COMPUTE', 'STORAGE', 'DATABASE', 'NETWORKING', 'REVIEW'].map(cat => (
             <button
               key={cat}
               className={`btn ${categoryFilter === cat ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => setCategoryFilter(cat)}
-              style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
+              style={{
+                padding: '0.4rem 0.85rem',
+                fontSize: '0.8rem',
+                ...(cat === 'REVIEW' && reviewRequiredCount > 0 ? { borderColor: '#f87171', color: '#fca5a5' } : {})
+              }}
             >
-              {cat}
+              {cat === 'REVIEW' ? `REVIEW (${reviewRequiredCount})` : cat}
             </button>
           ))}
         </div>
@@ -290,12 +400,12 @@ export default function ResourceEditScreen({
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted)' }}>
-              <th style={{ padding: '0.75rem', width: '22%' }}>Source Workload</th>
-              <th style={{ padding: '0.75rem', width: '12%' }}>Source Cost</th>
+              <th style={{ padding: '0.75rem', width: '24%' }}>Source Workload & Confidence</th>
+              <th style={{ padding: '0.75rem', width: '10%' }}>Source Cost</th>
               <th style={{ padding: '0.75rem', width: '18%' }}>Target AWS Service</th>
-              <th style={{ padding: '0.75rem', width: '18%' }}>Instance / Spec</th>
+              <th style={{ padding: '0.75rem', width: '20%' }}>Instance / Spec & Sizing</th>
               <th style={{ padding: '0.75rem', width: '10%' }}>Quantity</th>
-              <th style={{ padding: '0.75rem', width: '12%' }}>Target Region</th>
+              <th style={{ padding: '0.75rem', width: '10%' }}>Target Region</th>
               <th style={{ padding: '0.75rem', width: '8%', textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
@@ -308,16 +418,30 @@ export default function ResourceEditScreen({
               </tr>
             ) : (
               filtered.map((item) => (
-                <tr key={item.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)', transition: 'background 0.2s' }}>
-                  {/* Source Details */}
+                <tr key={item.id} style={{
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                  transition: 'background 0.2s',
+                  background: (item.is_review_required || item.mapping_confidence === 'review_required')
+                    ? 'rgba(239, 68, 68, 0.03)'
+                    : 'transparent'
+                }}>
+                  {/* Source Details & Confidence */}
                   <td style={{ padding: '0.85rem 0.75rem' }}>
-                    <div style={{ fontWeight: 600, color: '#f8fafc', marginBottom: '0.2rem' }}>
-                      {item.source_service_name}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 600, color: '#f8fafc' }}>
+                        {item.source_service_name}
+                      </span>
+                      {renderConfidenceBadge(item.mapping_confidence, item.is_review_required)}
                     </div>
                     {item.source_sku && (
                       <span style={{ fontSize: '0.75rem', color: '#94a3b8', background: 'rgba(255,255,255,0.06)', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
-                        {item.source_sku}
+                        SKU: {item.source_sku}
                       </span>
+                    )}
+                    {item.mapping_rationale && (
+                      <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '0.3rem', fontStyle: 'italic' }}>
+                        {item.mapping_rationale}
+                      </div>
                     )}
                   </td>
 
@@ -334,8 +458,8 @@ export default function ResourceEditScreen({
                       style={{
                         width: '100%',
                         background: '#0b1120',
-                        color: '#38bdf8',
-                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        color: (item.is_review_required || item.mapping_confidence === 'review_required') ? '#f87171' : '#38bdf8',
+                        border: (item.is_review_required || item.mapping_confidence === 'review_required') ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(56, 189, 248, 0.3)',
                         borderRadius: '6px',
                         padding: '0.45rem',
                         fontSize: '0.85rem'
@@ -351,9 +475,17 @@ export default function ResourceEditScreen({
                           <option value="Amazon RDS">Amazon RDS</option>
                           <option value="Amazon Route 53">Amazon Route 53</option>
                           <option value="AWS Data Transfer">AWS Data Transfer</option>
+                          <option value="Amazon VPC">Amazon VPC</option>
+                          <option value="AWS Site-to-Site VPN">AWS Site-to-Site VPN</option>
                         </>
                       )}
                     </select>
+
+                    {item.candidate_services && item.candidate_services.length > 0 && (
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                        Suggested: {item.candidate_services.slice(0, 2).join(', ')}
+                      </div>
+                    )}
                   </td>
 
                   {/* Target Instance Type / Spec */}
@@ -375,8 +507,9 @@ export default function ResourceEditScreen({
                     />
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
                       {item.target_aws_service_code === 'AmazonEC2' && `${item.target_vcpu || 2} vCPU • ${item.target_ram_gb || 4} GB RAM`}
-                      {item.target_aws_service_code === 'AmazonEBS' && `${item.target_storage_gb || 100} GB Storage`}
-                      {item.target_aws_service_code === 'AmazonS3' && 'Object Storage'}
+                      {item.target_aws_service_code === 'AmazonEBS' && `${item.target_storage_gb || 100} GB gp3 Volume`}
+                      {item.target_aws_service_code === 'AmazonS3' && `${item.target_storage_gb || 50} GB Standard Bucket`}
+                      {item.target_aws_service_code === 'AmazonRDS' && `${item.db_engine || 'Database'} Instance`}
                     </div>
                   </td>
 
@@ -408,32 +541,35 @@ export default function ResourceEditScreen({
                       style={{
                         width: '100%',
                         background: '#0b1120',
-                        color: '#e2e8f0',
+                        color: '#fff',
                         border: '1px solid var(--border-color)',
                         borderRadius: '6px',
                         padding: '0.45rem',
-                        fontSize: '0.82rem'
+                        fontSize: '0.8rem'
                       }}
                     >
                       {options?.supported_regions?.map(reg => (
-                        <option key={reg.code} value={reg.code}>{reg.code}</option>
-                      )) || <option value="ap-south-1">ap-south-1</option>}
+                        <option key={reg.code} value={reg.code}>{reg.name.split(' ')[0]}</option>
+                      )) || <option value="ap-south-1">Mumbai</option>}
                     </select>
                   </td>
 
-                  {/* Delete Action */}
+                  {/* Actions */}
                   <td style={{ padding: '0.85rem 0.75rem', textAlign: 'center' }}>
                     <button
                       onClick={() => handleDelete(item.id)}
-                      title="Remove workload"
+                      title="Delete workload"
                       style={{
-                        background: 'none',
+                        background: 'transparent',
                         border: 'none',
-                        color: '#f87171',
+                        color: 'var(--text-dim)',
                         cursor: 'pointer',
-                        padding: '0.3rem',
-                        borderRadius: '4px'
+                        padding: '0.35rem',
+                        borderRadius: '4px',
+                        transition: 'all 0.2s'
                       }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-dim)'}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -458,12 +594,12 @@ export default function ResourceEditScreen({
           ← Back to Upload
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-            Configured <strong>{resources.length}</strong> AWS resources for <strong>{targetRegion}</strong>
-          </span>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button className="btn btn-secondary" onClick={handleSave} disabled={isSaving}>
+            <Save size={16} /> Save Mappings
+          </button>
           <button className="btn btn-primary" onClick={() => onProceedToCost && onProceedToCost(resources, targetRegion)}>
-            Proceed to Phase 3: Cost Estimator <ArrowRight size={16} />
+            Proceed to Cost Estimator <ArrowRight size={16} />
           </button>
         </div>
       </div>

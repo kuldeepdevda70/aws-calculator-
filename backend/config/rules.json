@@ -1,13 +1,19 @@
 {
   "default_region": "ap-south-1",
   "file_retention_hours": 24,
+  "calculator_automation": {
+    "url": "https://calculator.aws/#/addService",
+    "timeout_seconds": 90,
+    "headless": true
+  },
   "supported_extensions": [".pdf", ".png", ".jpg", ".jpeg", ".csv", ".xlsx", ".xls"],
   "supported_aws_regions": [
     { "code": "ap-south-1", "name": "Asia Pacific (Mumbai) [Default]" },
     { "code": "us-east-1", "name": "US East (N. Virginia)" },
     { "code": "us-west-2", "name": "US West (Oregon)" },
     { "code": "eu-west-1", "name": "Europe (Ireland)" },
-    { "code": "ap-southeast-1", "name": "Asia Pacific (Singapore)" }
+    { "code": "ap-southeast-1", "name": "Asia Pacific (Singapore)" },
+    { "code": "ap-southeast-2", "name": "Asia Pacific (Sydney)" }
   ],
   "available_aws_services": [
     {
@@ -65,6 +71,12 @@
       "common_instances": ["Public IPv4 Address", "NAT Gateway", "VPN Connection"]
     },
     {
+      "code": "AWSVPN",
+      "name": "AWS Site-to-Site VPN",
+      "category": "Networking",
+      "common_instances": ["VPN Connection"]
+    },
+    {
       "code": "AWSKMS",
       "name": "AWS KMS",
       "category": "Security",
@@ -74,46 +86,60 @@
   "providers": {
     "azure": {
       "name": "Microsoft Azure",
-      "keywords": ["azure", "microsoft", "subscription id", "resource group", "meter name"]
+      "keywords": ["azure", "microsoft", "subscription id", "resource group", "meter name", "meter category", "resource location"]
     },
     "gcp": {
       "name": "Google Cloud Platform",
-      "keywords": ["google cloud", "gcp", "project id", "compute engine", "cloud storage"]
+      "keywords": ["google cloud", "gcp", "project id", "compute engine", "cloud storage", "cloud sql", "bigquery"]
     },
     "aws": {
       "name": "Amazon Web Services",
-      "keywords": ["amazon web services", "aws", "account id", "arn:aws", "elastic compute"]
+      "keywords": ["amazon web services", "aws", "account id", "arn:aws", "elastic compute", "amazon ec2", "amazon s3"]
     },
     "digitalocean": {
       "name": "DigitalOcean",
-      "keywords": ["digitalocean", "droplet", "spaces", "bandwidth pool"]
+      "keywords": ["digitalocean", "droplet", "spaces", "bandwidth pool", "block storage"]
     }
   },
   "service_category_rules": [
     {
       "category": "Load Balancer",
-      "keywords": ["application gateway", "load balancer", "gateway standard v2", "app gateway"],
+      "keywords": ["application gateway", "load balancer", "gateway standard v2", "app gateway", "network load balancer"],
       "target_aws_service": "AWS Elastic Load Balancing",
       "target_aws_service_code": "AWSELB",
       "default_instance": "Application Load Balancer"
     },
     {
+      "category": "VPN & Hybrid Networking",
+      "keywords": ["virtual network gateway", "vpn gateway", "vpn connection", "expressroute", "cloud interconnect", "interconnect"],
+      "target_aws_service": "AWS Site-to-Site VPN",
+      "target_aws_service_code": "AWSVPN",
+      "default_instance": "VPN Connection"
+    },
+    {
+      "category": "NAT & Gateways",
+      "keywords": ["nat gateway", "cloud nat", "nat rules"],
+      "target_aws_service": "Amazon VPC",
+      "target_aws_service_code": "AWSVPC",
+      "default_instance": "NAT Gateway"
+    },
+    {
       "category": "Cache",
-      "keywords": ["redis", "redis cache", "memcached", "cache instance", "cache"],
+      "keywords": ["redis", "redis cache", "memcached", "cache instance", "memorystore", "cache"],
       "target_aws_service": "Amazon ElastiCache",
       "target_aws_service_code": "AmazonElastiCache",
       "default_instance": "cache.t3.micro"
     },
     {
       "category": "Database",
-      "keywords": ["mysql", "postgres", "sql server", "database for", "flexible server", "cloud sql", "rds", "cosmos"],
+      "keywords": ["mysql", "postgres", "sql server", "database for", "flexible server", "cloud sql", "rds", "cosmos", "alloydb", "mariadb"],
       "target_aws_service": "Amazon RDS",
       "target_aws_service_code": "AmazonRDS",
       "default_instance": "db.t3.medium"
     },
     {
       "category": "Block Storage",
-      "keywords": ["managed disk", "disk", "persistent disk", "ebs", "volume", "snapshot"],
+      "keywords": ["managed disk", "disk", "persistent disk", "ebs", "volume", "snapshot", "block storage"],
       "target_aws_service": "Amazon EBS",
       "target_aws_service_code": "AmazonEBS",
       "default_instance": "gp3"
@@ -127,14 +153,14 @@
     },
     {
       "category": "DNS",
-      "keywords": ["dns", "dns public", "dns private", "zone", "public query", "private query"],
+      "keywords": ["dns", "dns public", "dns private", "zone", "public query", "private query", "cloud dns"],
       "target_aws_service": "Amazon Route 53",
       "target_aws_service_code": "AmazonRoute53",
       "default_instance": "Hosted Zone"
     },
     {
       "category": "Public IP & Networking",
-      "keywords": ["ip address", "public ip", "ipv4", "addresses", "static public", "private link"],
+      "keywords": ["ip address", "public ip", "ipv4", "addresses", "static public", "private link", "elastic ip"],
       "target_aws_service": "Amazon VPC",
       "target_aws_service_code": "AWSVPC",
       "default_instance": "Public IPv4 Address"
@@ -148,36 +174,54 @@
     },
     {
       "category": "Security & Keys",
-      "keywords": ["key vault", "kms", "secret", "vault"],
+      "keywords": ["key vault", "kms", "secret", "vault", "secret manager", "cloud kms"],
       "target_aws_service": "AWS KMS",
       "target_aws_service_code": "AWSKMS",
       "default_instance": "Key Management"
     },
     {
       "category": "Compute",
-      "keywords": ["virtual machine", "compute engine", "droplet", "ec2", "vcore", "app service", "container"],
+      "keywords": ["virtual machine", "compute engine", "droplet", "ec2", "vcore", "app service", "container", "virtual machines", "instances"],
       "target_aws_service": "Amazon EC2",
       "target_aws_service_code": "AmazonEC2",
       "default_instance": "t3.medium"
     }
   ],
   "instance_mappings": {
-    "d2_v3": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4, "storage_gb": 0 },
-    "d2s_v3": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4, "storage_gb": 0 },
-    "standard_d2s_v3": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4, "storage_gb": 0 },
-    "d4_v3": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 8, "storage_gb": 0 },
-    "d4s_v3": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 8, "storage_gb": 0 },
-    "standard_d4s_v3": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 8, "storage_gb": 0 },
-    "b1s": { "aws_instance": "t3.nano", "vcpu": 1, "ram_gb": 0.5, "storage_gb": 0 },
-    "standard_b1s": { "aws_instance": "t3.nano", "vcpu": 1, "ram_gb": 0.5, "storage_gb": 0 },
-    "b1ms": { "aws_instance": "t3.micro", "vcpu": 2, "ram_gb": 1, "storage_gb": 0 },
-    "standard_b1ms": { "aws_instance": "t3.micro", "vcpu": 2, "ram_gb": 1, "storage_gb": 0 },
-    "b2s": { "aws_instance": "t3.small", "vcpu": 2, "ram_gb": 2, "storage_gb": 0 },
-    "standard_b2s": { "aws_instance": "t3.small", "vcpu": 2, "ram_gb": 2, "storage_gb": 0 },
-    "b2ms": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4, "storage_gb": 0 },
-    "standard_b2ms": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4, "storage_gb": 0 },
-    "b4ms": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 16, "storage_gb": 0 },
-    "e4": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 128 },
+    "d2_v3": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 8, "storage_gb": 0 },
+    "d2s_v3": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 8, "storage_gb": 0 },
+    "standard_d2s_v3": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 8, "storage_gb": 0 },
+    "standard_d2_v3": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 8, "storage_gb": 0 },
+    "d4_v3": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 16, "storage_gb": 0 },
+    "d4s_v3": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 16, "storage_gb": 0 },
+    "standard_d4s_v3": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 16, "storage_gb": 0 },
+    "standard_d4_v3": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 16, "storage_gb": 0 },
+    "d8_v3": { "aws_instance": "t3.2xlarge", "vcpu": 8, "ram_gb": 32, "storage_gb": 0 },
+    "d8s_v3": { "aws_instance": "t3.2xlarge", "vcpu": 8, "ram_gb": 32, "storage_gb": 0 },
+    "standard_d8s_v3": { "aws_instance": "t3.2xlarge", "vcpu": 8, "ram_gb": 32, "storage_gb": 0 },
+    "b1s": { "aws_instance": "t3.nano", "vcpu": 1, "ram_gb": 1.0, "storage_gb": 0 },
+    "standard_b1s": { "aws_instance": "t3.nano", "vcpu": 1, "ram_gb": 1.0, "storage_gb": 0 },
+    "b1ms": { "aws_instance": "t3.micro", "vcpu": 1, "ram_gb": 2.0, "storage_gb": 0 },
+    "standard_b1ms": { "aws_instance": "t3.micro", "vcpu": 1, "ram_gb": 2.0, "storage_gb": 0 },
+    "b2s": { "aws_instance": "t3.small", "vcpu": 2, "ram_gb": 4.0, "storage_gb": 0 },
+    "standard_b2s": { "aws_instance": "t3.small", "vcpu": 2, "ram_gb": 4.0, "storage_gb": 0 },
+    "b2ms": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 8.0, "storage_gb": 0 },
+    "standard_b2ms": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 8.0, "storage_gb": 0 },
+    "b4ms": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 16.0, "storage_gb": 0 },
+    "standard_b4ms": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 16.0, "storage_gb": 0 },
+    "e2s_v3": { "aws_instance": "r5.large", "vcpu": 2, "ram_gb": 16.0, "storage_gb": 0 },
+    "standard_e2s_v3": { "aws_instance": "r5.large", "vcpu": 2, "ram_gb": 16.0, "storage_gb": 0 },
+    "e4s_v3": { "aws_instance": "r5.xlarge", "vcpu": 4, "ram_gb": 32.0, "storage_gb": 0 },
+    "standard_e4s_v3": { "aws_instance": "r5.xlarge", "vcpu": 4, "ram_gb": 32.0, "storage_gb": 0 },
+    "f2s_v2": { "aws_instance": "c5.large", "vcpu": 2, "ram_gb": 4.0, "storage_gb": 0 },
+    "standard_f2s_v2": { "aws_instance": "c5.large", "vcpu": 2, "ram_gb": 4.0, "storage_gb": 0 },
+    "f4s_v2": { "aws_instance": "c5.xlarge", "vcpu": 4, "ram_gb": 8.0, "storage_gb": 0 },
+    "standard_f4s_v2": { "aws_instance": "c5.xlarge", "vcpu": 4, "ram_gb": 8.0, "storage_gb": 0 },
+    "e4": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 32 },
+    "e10": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 128 },
+    "e15": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 256 },
+    "e20": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 512 },
+    "e30": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 1024 },
     "p4": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 32 },
     "p6": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 64 },
     "p10": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 128 },
@@ -185,24 +229,86 @@
     "p20": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 512 },
     "p30": { "aws_instance": "gp3", "vcpu": 0, "ram_gb": 0, "storage_gb": 1024 },
     "c0": { "aws_instance": "cache.t3.micro", "vcpu": 1, "ram_gb": 0.5, "storage_gb": 0 },
+    "c1": { "aws_instance": "cache.t3.small", "vcpu": 1, "ram_gb": 1.0, "storage_gb": 0 },
+    "c2": { "aws_instance": "cache.t3.medium", "vcpu": 2, "ram_gb": 2.5, "storage_gb": 0 },
+    "e2_micro": { "aws_instance": "t3.micro", "vcpu": 2, "ram_gb": 1.0, "storage_gb": 0 },
+    "e2_small": { "aws_instance": "t3.small", "vcpu": 2, "ram_gb": 2.0, "storage_gb": 0 },
+    "e2_medium": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4.0, "storage_gb": 0 },
+    "e2_standard_2": { "aws_instance": "m5.large", "vcpu": 2, "ram_gb": 8.0, "storage_gb": 0 },
+    "e2_standard_4": { "aws_instance": "m5.xlarge", "vcpu": 4, "ram_gb": 16.0, "storage_gb": 0 },
     "n1_standard_1": { "aws_instance": "t3.medium", "vcpu": 1, "ram_gb": 3.75, "storage_gb": 0 },
     "n1_standard_2": { "aws_instance": "m5.large", "vcpu": 2, "ram_gb": 7.5, "storage_gb": 0 },
-    "s_1vcpu_1gb": { "aws_instance": "t3.micro", "vcpu": 1, "ram_gb": 1, "storage_gb": 25 },
-    "s_1vcpu_2gb": { "aws_instance": "t3.small", "vcpu": 1, "ram_gb": 2, "storage_gb": 50 },
-    "s_2vcpu_4gb": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4, "storage_gb": 80 }
+    "n1_standard_4": { "aws_instance": "m5.xlarge", "vcpu": 4, "ram_gb": 15.0, "storage_gb": 0 },
+    "n2_standard_2": { "aws_instance": "m5.large", "vcpu": 2, "ram_gb": 8.0, "storage_gb": 0 },
+    "n2_standard_4": { "aws_instance": "m5.xlarge", "vcpu": 4, "ram_gb": 16.0, "storage_gb": 0 },
+    "c2_standard_4": { "aws_instance": "c5.xlarge", "vcpu": 4, "ram_gb": 16.0, "storage_gb": 0 },
+    "s_1vcpu_512mb": { "aws_instance": "t3.nano", "vcpu": 1, "ram_gb": 0.5, "storage_gb": 10 },
+    "s_1vcpu_1gb": { "aws_instance": "t3.micro", "vcpu": 1, "ram_gb": 1.0, "storage_gb": 25 },
+    "s_1vcpu_2gb": { "aws_instance": "t3.small", "vcpu": 1, "ram_gb": 2.0, "storage_gb": 50 },
+    "s_2vcpu_2gb": { "aws_instance": "t3.small", "vcpu": 2, "ram_gb": 2.0, "storage_gb": 60 },
+    "s_2vcpu_4gb": { "aws_instance": "t3.medium", "vcpu": 2, "ram_gb": 4.0, "storage_gb": 80 },
+    "s_4vcpu_8gb": { "aws_instance": "t3.xlarge", "vcpu": 4, "ram_gb": 8.0, "storage_gb": 160 },
+    "s_8vcpu_16gb": { "aws_instance": "m5.2xlarge", "vcpu": 8, "ram_gb": 16.0, "storage_gb": 320 }
+  },
+  "region_mappings": {
+    "centralindia": "ap-south-1",
+    "southindia": "ap-south-1",
+    "westindia": "ap-south-1",
+    "india": "ap-south-1",
+    "asia-south1": "ap-south-1",
+    "asia-south2": "ap-south-1",
+    "blr1": "ap-south-1",
+    "eastus": "us-east-1",
+    "eastus2": "us-east-1",
+    "centralus": "us-east-1",
+    "northcentralus": "us-east-1",
+    "southcentralus": "us-east-1",
+    "us-central1": "us-east-1",
+    "us-east1": "us-east-1",
+    "us-east4": "us-east-1",
+    "nyc1": "us-east-1",
+    "nyc2": "us-east-1",
+    "nyc3": "us-east-1",
+    "westus": "us-west-2",
+    "westus2": "us-west-2",
+    "westus3": "us-west-2",
+    "us-west1": "us-west-2",
+    "us-west2": "us-west-2",
+    "sfo1": "us-west-2",
+    "sfo2": "us-west-2",
+    "sfo3": "us-west-2",
+    "westeurope": "eu-west-1",
+    "northeurope": "eu-west-1",
+    "uksouth": "eu-west-1",
+    "ukwest": "eu-west-1",
+    "europe-west1": "eu-west-1",
+    "europe-west2": "eu-west-1",
+    "europe-west3": "eu-west-1",
+    "ams2": "eu-west-1",
+    "ams3": "eu-west-1",
+    "lon1": "eu-west-1",
+    "fra1": "eu-west-1",
+    "southeastasia": "ap-southeast-1",
+    "eastasia": "ap-southeast-1",
+    "asia-southeast1": "ap-southeast-1",
+    "sgp1": "ap-southeast-1",
+    "australiaeast": "ap-southeast-2",
+    "australiasoutheast": "ap-southeast-2",
+    "australia-southeast1": "ap-southeast-2",
+    "syd1": "ap-southeast-2"
   },
   "currencies": {
-    "INR": { "symbol": "₹", "keywords": ["₹", "inr", "rs.", "rs", "rupee", "gstin"] },
-    "USD": { "symbol": "$", "keywords": ["$", "usd", "us dollar"] },
-    "EUR": { "symbol": "€", "keywords": ["€", "eur", "euro"] },
-    "GBP": { "symbol": "£", "keywords": ["£", "gbp", "pound"] }
+    "USD": { "symbol": "$", "keywords": ["$", "usd", "us dollar"], "regex": "\\b(usd|us dollar)\\b|\\$" },
+    "INR": { "symbol": "₹", "keywords": ["₹", "inr", "rupee", "gstin"], "regex": "\\b(inr|rs\\.?|rupees?|gstin)\\b|₹" },
+    "EUR": { "symbol": "€", "keywords": ["€", "eur", "euro"], "regex": "\\b(eur|euros?)\\b|€" },
+    "GBP": { "symbol": "£", "keywords": ["£", "gbp", "pound"], "regex": "\\b(gbp|pounds?)\\b|£" }
   },
   "tabular_column_mappings": {
-    "service": ["service", "servicename", "service name", "product", "productname", "product name", "item description", "description"],
-    "sku": ["sku", "instance type", "instancetype", "meter name", "meter", "resource type"],
-    "usage": ["usage", "usage quantity", "usagequantity", "quantity", "consumed quantity", "amount", "hours"],
-    "unit": ["unit", "unit of measure", "usage unit", "unit of metric"],
-    "cost": ["cost", "cost in usd", "pretax cost", "extended cost", "total", "amount", "total amount", "net amount"],
-    "region": ["region", "location", "resource location", "datacenter"]
+    "service": ["service name", "servicename", "service", "product name", "productname", "product", "item description", "description", "meter category"],
+    "sku": ["meter name", "metername", "instance type", "instancetype", "machine type", "sku name", "sku", "meter", "resource type"],
+    "usage": ["usage quantity", "usagequantity", "consumed quantity", "quantity", "usage amount", "usage", "amount", "hours"],
+    "unit": ["unit of measure", "unit of metric", "usage unit", "unit"],
+    "cost": ["pretax cost", "cost in usd", "extended cost", "total cost", "net amount", "total amount", "cost", "total", "amount"],
+    "region": ["resource location", "resourcelocation", "location", "region", "datacenter"]
   }
 }

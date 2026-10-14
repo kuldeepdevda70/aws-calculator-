@@ -115,7 +115,7 @@ export default function App() {
       <header style={{ marginBottom: '2rem', textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           <span className="badge badge-aws">
-            {currentStep === 1 ? 'Phase 1: Ingestion' : currentStep === 2 ? 'Phase 2: AWS Mapping & Edit' : 'Phase 3: Cost Preview'}
+            {currentStep === 1 ? 'Phase 1: Ingestion' : currentStep === 2 ? 'Phase 2: Architecture Mapping' : 'Phase 3 & 4: Cost & Shareable Link'}
           </span>
           <span className="badge badge-info"><Globe size={13} /> Region: {targetRegion} (Mumbai Default)</span>
           <span className="badge badge-success"><Clock size={13} /> 24h Auto-Purge Active</span>
@@ -175,7 +175,7 @@ export default function App() {
             }}
           >
             <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: currentStep >= 2 ? 'var(--accent-aws)' : '#475569', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}>2</span>
-            AWS Architecture Mapping & Edit
+            AWS Architecture Mapping
           </div>
 
           <span style={{ color: 'var(--border-color)' }}>→</span>
@@ -194,8 +194,8 @@ export default function App() {
               fontWeight: 600
             }}
           >
-            <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: currentStep >= 3 ? 'var(--accent-aws)' : '#475569', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}>3</span>
-            Cost Calculation (Phase 3)
+            <span style={{ width: '20px', height: '20px', borderRadius: '50%', background: currentStep >= 3 ? 'var(--accent-aws)' : '#475569', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}>3 & 4</span>
+            Cost & calculator.aws Link
           </div>
         </div>
       </header>
